@@ -1,3 +1,7 @@
+
+
+
+
 BEGIN;
 
 -- ==========================================
@@ -40,6 +44,30 @@ CREATE TABLE IF NOT EXISTS olist_order_reviews (
     review_comment_message TEXT,
     review_creation_date DATE,
     review_answer_timestamp TIMESTAMPTZ
+);
+
+-- ==========================================
+-- 4. Creating geolocation info table
+-- ==========================================
+
+CREATE TABLE IF NOT EXISTS olist_geolocation (
+    geolocation_zip_code_prefix CHAR(5),
+    geolocation_lat FLOAT(5),
+    geolocation_lng FLOAT(5),
+    geolocation_city VARCHAR(70),
+    geolocation_state CHAR(2),
+	id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY
+);
+
+-- ==========================================
+-- 5. Creating sellers info table
+-- ==========================================
+
+CREATE TABLE IF NOT EXISTS olist_sellers (
+    seller_id VARCHAR(50) PRIMARY KEY,
+    seller_zip_code_prefix CHAR(5) NOT NULL,
+    seller_city VARCHAR(70),
+    seller_state CHAR(2)
 );
 
 COMMIT;
