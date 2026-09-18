@@ -1,3 +1,6 @@
+
+
+ROLLBACK;
 BEGIN;
 
 -- ==========================================
@@ -42,7 +45,8 @@ CREATE TABLE IF NOT EXISTS olist_order_reviews (
     review_comment_title TEXT,
     review_comment_message TEXT,
     review_creation_date DATE,
-    review_answer_timestamp TIMESTAMPTZ
+    review_answer_timestamp TIMESTAMPTZ,
+	id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY
 );
 
 -- ==========================================
@@ -67,6 +71,34 @@ CREATE TABLE IF NOT EXISTS olist_sellers (
     seller_zip_code_prefix CHAR(5) NOT NULL,
     seller_city VARCHAR(70),
     seller_state CHAR(2)
+);
+
+-- ==========================================
+-- 6. Creating customers table
+-- ==========================================
+
+CREATE TABLE IF NOT EXISTS olist_order_customer (
+    customer_id VARCHAR(50) PRIMARY KEY,
+    customer_unique_id VARCHAR(50),
+    customer_zip_code_prefix VARCHAR(5),
+    customer_city CHAR(60),
+	customer_state CHAR(2)
+);
+
+-- ==========================================
+-- 7. Creating items table
+-- ==========================================
+
+-- TODO Rectify this part
+
+CREATE TABLE IF NOT EXISTS olist_order_items (
+    order_id VARCHAR(50) PRIMARY KEY, -- duplicated
+    order_item_id VARCHAR(5),
+    product_id VARCHAR(50) REFERENCES olist_products(product_id),
+    seller_id VARCHAR(50) REFERENCES olist_sellers(seller_id),
+	shipping_limit_date TIMESTAMPTZ,
+	price FLOAT(5),
+	freight_value FLOAT(5)
 );
 
 COMMIT;
