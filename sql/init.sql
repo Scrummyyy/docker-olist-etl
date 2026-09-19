@@ -86,19 +86,34 @@ CREATE TABLE IF NOT EXISTS olist_order_customer (
 );
 
 -- ==========================================
--- 7. Creating items table
+-- 7. Creating orders table
 -- ==========================================
 
--- TODO Rectify this part
+CREATE TABLE IF NOT EXISTS olist_orders (
+    order_id VARCHAR(50) PRIMARY KEY,
+	customer_id VARCHAR(50) REFERENCES olist_order_customer(customer_id),
+    order_status VARCHAR(35),
+    order_purchase_timestamp TIMESTAMPTZ,
+	order_approved_at TIMESTAMPTZ,
+	order_delivered_carrier_date TIMESTAMPTZ,
+	order_delivered_customer_date TIMESTAMPTZ,
+	order_estimated_delivery_date TIMESTAMPTZ
+);
+
+-- ==========================================
+-- 8. Creating items table
+-- ==========================================
 
 CREATE TABLE IF NOT EXISTS olist_order_items (
-    order_id VARCHAR(50) PRIMARY KEY, -- duplicated
+    order_id VARCHAR(50) REFERENCES olist_orders(order_id),
     order_item_id VARCHAR(5),
     product_id VARCHAR(50) REFERENCES olist_products(product_id),
     seller_id VARCHAR(50) REFERENCES olist_sellers(seller_id),
 	shipping_limit_date TIMESTAMPTZ,
 	price FLOAT(5),
-	freight_value FLOAT(5)
+	freight_value FLOAT(5),
+	-- Define primary key with 2 columns
+    PRIMARY KEY (order_id, order_item_id)
 );
 
 COMMIT;
