@@ -1,6 +1,5 @@
 .idea/
 .venv/
 data/
-scripts/check_network.py
 scripts/config.py
 scripts/draft.py
