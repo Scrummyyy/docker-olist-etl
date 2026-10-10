@@ -2,94 +2,150 @@
 -- 1. Creating overdue view with metrics
 -- ==========================================
 
-CREATE
-  OR replace VIEW olist_overdue_orders_summary AS
-WITH TARGET_DATA AS (
-  SELECT
-    *,
-    date(order_delivered_customer_date) - date(order_estimated_delivery_date) AS overdue_time
-  FROM olist_orders
-  WHERE date_part('month', order_estimated_delivery_date) = 8
-    AND date_part('year', order_estimated_delivery_date) = 2018
-    AND DATE(order_estimated_delivery_date) < DATE(order_delivered_customer_date)
-)
+CREATE OR REPLACE VIEW OLIST_OVERDUE_ORDERS_SUMMARY AS
+WITH
+	TARGET_DATA AS (
+		SELECT
+			*,
+			DATE (ORDER_DELIVERED_CUSTOMER_DATE) - DATE (ORDER_ESTIMATED_DELIVERY_DATE) AS OVERDUE_TIME
+		FROM
+			OLIST_ORDERS
+		WHERE
+			DATE_PART('month', ORDER_ESTIMATED_DELIVERY_DATE) = 8
+			AND DATE_PART('year', ORDER_ESTIMATED_DELIVERY_DATE) = 2018
+			AND DATE (ORDER_ESTIMATED_DELIVERY_DATE) < DATE (ORDER_DELIVERED_CUSTOMER_DATE)
+	)
 SELECT
-  to_char(order_estimated_delivery_date, 'Mon YYYY') AS report_period,
-  CASE WHEN overdue_time BETWEEN 1
-  AND 7 THEN '1 - 7 days' WHEN overdue_time BETWEEN 8
-  AND 14 THEN '8 - 14 days' WHEN overdue_time BETWEEN 15
-  AND 30 THEN '15 - 30 days' ELSE 'Over 30 days' END AS overdue_category,
-  count(orders.order_id) AS order_count,
-  sum(payment_value) AS total_value,
-  round(avg(overdue_time), 2) AS avg_days
-FROM TARGET_DATA AS orders
-INNER JOIN olist_order_payments AS payments
-ON orders.order_id = payments.order_id
-GROUP BY report_period,
-  overdue_category;
+	TO_CHAR(ORDER_ESTIMATED_DELIVERY_DATE, 'Mon YYYY') AS REPORT_PERIOD,
+	CASE
+		WHEN OVERDUE_TIME BETWEEN 1 AND 7  THEN '1 - 7 days'
+		WHEN OVERDUE_TIME BETWEEN 8 AND 14  THEN '8 - 14 days'
+		WHEN OVERDUE_TIME BETWEEN 15 AND 30  THEN '15 - 30 days'
+		ELSE 'Over 30 days'
+	END AS OVERDUE_CATEGORY,
+	COUNT(ORDERS.ORDER_ID) AS ORDER_COUNT,
+	SUM(PAYMENT_VALUE) AS TOTAL_VALUE,
+	ROUND(AVG(OVERDUE_TIME), 2) AS AVG_DAYS
+FROM
+	TARGET_DATA AS ORDERS
+	INNER JOIN OLIST_ORDER_PAYMENTS AS PAYMENTS ON ORDERS.ORDER_ID = PAYMENTS.ORDER_ID
+GROUP BY
+	REPORT_PERIOD,
+	OVERDUE_CATEGORY;
 
 -- ==========================================
 -- 2. Creating month revenue view
 -- ==========================================
 
-CREATE
-  OR replace VIEW olist_month_revenue_aov AS
-WITH completed_orders AS (
-  SELECT
-    *
-  FROM olist_orders --TODO add flexible variable with docker month and year for prev month
-  WHERE date_part('month', order_estimated_delivery_date) = 8
-    AND date_part('year', order_estimated_delivery_date) = 2018
-    AND order_status IN ('delivered', 'shipped')
-),
-  items_info AS (
-  SELECT
-    order_id,
-    price,
-    freight_value,
-    price + freight_value AS cross_revenue
-  FROM olist_order_items
-)
+CREATE OR REPLACE VIEW OLIST_MONTH_REVENUE_AOV AS
+WITH
+	COMPLETED_ORDERS AS (
+		SELECT
+			*
+		FROM
+			OLIST_ORDERS --TODO add flexible variable with docker month and year for prev month
+		WHERE
+			DATE_PART('month', ORDER_ESTIMATED_DELIVERY_DATE) = 8
+			AND DATE_PART('year', ORDER_ESTIMATED_DELIVERY_DATE) = 2018
+			AND ORDER_STATUS IN ('delivered', 'shipped')
+	),
+	ITEMS_INFO AS (
+		SELECT
+			ORDER_ID,
+			PRICE,
+			FREIGHT_VALUE,
+			PRICE + FREIGHT_VALUE AS CROSS_REVENUE
+		FROM
+			OLIST_ORDER_ITEMS
+	)
 SELECT
-  to_char(order_estimated_delivery_date, 'Mon YYYY') AS report_period,
-  count(*) AS orders,
-  round(sum(price) :: numeric, 2) AS items_revenue,
-  sum(freight_value) AS freight_value,
-  round(sum(cross_revenue) :: numeric, 2) AS cross_revenue,
-  round((sum(cross_revenue) / count(*)) :: numeric, 2) AS aov
-FROM completed_orders AS comp
-INNER JOIN items_info AS item ON item.order_id = comp.order_id
-GROUP BY report_period;
+	TO_CHAR(ORDER_ESTIMATED_DELIVERY_DATE, 'Mon YYYY') AS REPORT_PERIOD,
+	COUNT(*) AS ORDERS,
+	ROUND(SUM(PRICE)::NUMERIC, 2) AS ITEMS_REVENUE,
+	SUM(FREIGHT_VALUE) AS FREIGHT_VALUE,
+	ROUND(SUM(CROSS_REVENUE)::NUMERIC, 2) AS CROSS_REVENUE,
+	ROUND((SUM(CROSS_REVENUE) / COUNT(*))::NUMERIC, 2) AS AOV
+FROM
+	COMPLETED_ORDERS AS COMP
+	INNER JOIN ITEMS_INFO AS ITEM ON ITEM.ORDER_ID = COMP.ORDER_ID
+GROUP BY
+	REPORT_PERIOD;
 
 -- ==========================================
--- 3. Creating payment method & installments breakdow view
+-- 3. Creating payment method & installments breakdown view
 -- ==========================================
 
-CREATE
-  OR replace VIEW olist_payment_method AS
-
-WITH completed_orders AS (
-  SELECT
-    *
-  FROM olist_orders --TODO add flexible variable with docker month and year for prev month
-  WHERE date_part('month', order_estimated_delivery_date) = 8
-    AND date_part('year', order_estimated_delivery_date) = 2018
-    AND order_status IN ('delivered', 'shipped')
-)
+CREATE OR REPLACE VIEW OLIST_PAYMENT_METHOD AS
+WITH
+	COMPLETED_ORDERS AS (
+		SELECT
+			*
+		FROM
+			OLIST_ORDERS --TODO add flexible variable with docker month and year for prev month
+		WHERE
+			DATE_PART('month', ORDER_ESTIMATED_DELIVERY_DATE) = 8
+			AND DATE_PART('year', ORDER_ESTIMATED_DELIVERY_DATE) = 2018
+			AND ORDER_STATUS IN ('delivered', 'shipped')
+	)
 SELECT
-  to_char(order_estimated_delivery_date, 'Mon YYYY') AS report_period,
-  payment_type,
-  count(*) AS total_transaction,
-  round(avg(payment_installments), 2) AS volume_avg,
-  ROUND((SUM(payment_value) / SUM(SUM(payment_value)) OVER () * 100) :: numeric, 1) AS share_of_volume_pct,
-  round(sum(payment_value) :: numeric, 2) AS total_volume
-FROM olist_order_payments AS pay
-INNER JOIN completed_orders AS comp
-ON comp.order_id = pay.order_id
-GROUP BY report_period, payment_type;
+	TO_CHAR(ORDER_ESTIMATED_DELIVERY_DATE, 'Mon YYYY') AS REPORT_PERIOD,
+	PAYMENT_TYPE,
+	COUNT(*) AS TOTAL_TRANSACTION,
+	ROUND(AVG(PAYMENT_INSTALLMENTS), 2) AS VOLUME_AVG,
+	ROUND(
+		(
+			SUM(PAYMENT_VALUE) / SUM(SUM(PAYMENT_VALUE)) OVER () * 100
+		)::NUMERIC,
+		1
+	) AS SHARE_OF_VOLUME_PCT,
+	ROUND(SUM(PAYMENT_VALUE)::NUMERIC, 2) AS TOTAL_VOLUME
+FROM
+	OLIST_ORDER_PAYMENTS AS PAY
+	INNER JOIN COMPLETED_ORDERS AS COMP ON COMP.ORDER_ID = PAY.ORDER_ID
+GROUP BY
+	REPORT_PERIOD,
+	PAYMENT_TYPE;
 
 -- ==========================================
--- 4. TODO Creating freight ratio by state view
+-- 4. Creating freight ratio by state view
 -- ==========================================
-
+CREATE OR REPLACE VIEW OLIST_FREIGHT_RATIO AS
+WITH
+	FREIGHT_SHARE_PREP AS (
+		SELECT
+			STATE_INFO.CUSTOMER_STATE,
+			COUNT(DISTINCT ORDERS.CUSTOMER_ID) AS ORDER_COUNT,
+			ROUND(AVG(PRICE.PRICE)::NUMERIC, 2) AS AVG_ITEM_PRICE,
+			ROUND(AVG(PRICE.FREIGHT_VALUE)::NUMERIC, 2) AS AVG_FREIGHT_VALUE,
+			ROUND(
+				(
+					AVG(PRICE.FREIGHT_VALUE) / (AVG(PRICE.PRICE) + AVG(PRICE.FREIGHT_VALUE)) * 100
+				)::NUMERIC,
+				2
+			) AS FREIGHT_SHARE
+		FROM
+			OLIST_ORDERS AS ORDERS
+			INNER JOIN OLIST_ORDER_CUSTOMER AS STATE_INFO ON ORDERS.CUSTOMER_ID = STATE_INFO.CUSTOMER_ID
+			INNER JOIN OLIST_ORDER_ITEMS AS PRICE ON ORDERS.ORDER_ID = PRICE.ORDER_ID
+		WHERE
+			DATE_PART('month', ORDERS.ORDER_ESTIMATED_DELIVERY_DATE) = 8
+			AND DATE_PART('year', ORDERS.ORDER_ESTIMATED_DELIVERY_DATE) = 2018
+			AND ORDERS.ORDER_STATUS IN ('delivered', 'shipped')
+		GROUP BY
+			STATE_INFO.CUSTOMER_STATE
+	)
+SELECT
+	CUSTOMER_STATE,
+	ORDER_COUNT,
+	AVG_ITEM_PRICE,
+	AVG_FREIGHT_VALUE,
+	FREIGHT_SHARE,
+	CASE
+		WHEN FREIGHT_SHARE > 20 THEN 'High'
+		WHEN FREIGHT_SHARE BETWEEN 12 AND 20  THEN 'Medium'
+		WHEN FREIGHT_SHARE < 12 THEN 'Low'
+		ELSE 'Undefined'
+	END
+FROM
+	FREIGHT_SHARE_PREP;
 
