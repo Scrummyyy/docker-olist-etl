@@ -1,7 +1,10 @@
 
 import psycopg2
 import pandas as pd
-from config import Config  # Імпортуємо наш клас з конфігом
+import re
+from config import Config  # import config file
+
+_QUERY_PATH ='../sql/metrics.sql'
 
 def get_connection():
     return psycopg2.connect(
@@ -39,7 +42,21 @@ def test_connection():
         print(f"Failed to connect to PostgreSQL: {e}")
         return False
 
+def get_sql_query(filename, **kwargs):
+    with open(filename, 'r') as file:
+        sql_query = file.read().format(**kwargs)
+    return sql_query
+
+
+
+def get_data_from_db(customer_id):
+    sql_file = 'sql_queries/get_data.sql'
+    sql_query = get_sql_query(sql_file, customer_id=customer_id)
 
 if __name__ == "__main__":
     test_connection()
-
+    str_query = str(get_sql_query(_QUERY_PATH))
+    ## finish it & make func
+    pattern = rf"{re.escape('CREATE OR REPLACE VIEW ')}\s+(\w+)"
+    match = re.search(pattern, str_query)
+    print(match)
