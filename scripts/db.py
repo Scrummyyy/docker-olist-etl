@@ -5,6 +5,7 @@ import re
 from config import Config  # import config file
 
 _QUERY_PATH ='../sql/metrics.sql'
+_CREATE_VIEW_TEXT = 'CREATE OR REPLACE VIEW'
 
 def get_connection():
     return psycopg2.connect(
@@ -55,8 +56,14 @@ def get_data_from_db(customer_id):
 
 if __name__ == "__main__":
     test_connection()
+    #TODO make func for searching name of view
     str_query = str(get_sql_query(_QUERY_PATH))
     ## finish it & make func
-    pattern = rf"{re.escape('CREATE OR REPLACE VIEW ')}\s+(\w+)"
+    pattern = rf"{re.escape(_CREATE_VIEW_TEXT)}[\s](\w+)"
     match = re.search(pattern, str_query)
-    print(match)
+
+    if match:
+        result = match.group(1)
+        print(f"The word after phrase: '{result}'")
+    else:
+        print("The phrase wasn't found! :(")
