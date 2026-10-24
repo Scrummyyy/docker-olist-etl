@@ -44,20 +44,23 @@ def test_connection():
         return False
 
 def get_sql_query(filename, **kwargs):
+
+    '''It returns a SQL query string from filename'''
+
     with open(filename, 'r') as file:
         sql_query = file.read().format(**kwargs)
+
     return sql_query
 
+# def get_data_from_db(customer_id):
+#     sql_file = 'sql_queries/get_data.sql'
+#     sql_query = get_sql_query(sql_file, customer_id=customer_id)
 
 
-def get_data_from_db(customer_id):
-    sql_file = 'sql_queries/get_data.sql'
-    sql_query = get_sql_query(sql_file, customer_id=customer_id)
 
-if __name__ == "__main__":
-    test_connection()
+def get_list_of_target_views(str_query):
 
-    #TODO make func for searching name of view
+    ''' It parses SQL query and return list of target view names '''
 
     view_name_list = []
     str_query = str(get_sql_query(_QUERY_PATH))
@@ -68,12 +71,17 @@ if __name__ == "__main__":
             match = re.search(pattern, str_query)
             view_name = match.group(1)
 
-            print(f"The word after phrase: '{view_name}'")
+            print(f"The target view name: '{view_name}'")
             view_name_list.append(view_name)
             drop_part = str_query.find(view_name)
             str_query = str_query[drop_part::]
-            print(str_query[drop_part::])
-        except AttributeError:
-            break
 
-    print(view_name_list)
+        except AttributeError:
+            break  # End of func
+
+    return view_name_list
+
+if __name__ == "__main__":
+    test_connection()
+    str_views_query = str(get_sql_query(_QUERY_PATH))
+    print(get_list_of_target_views(str_views_query))
