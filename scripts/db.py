@@ -56,14 +56,24 @@ def get_data_from_db(customer_id):
 
 if __name__ == "__main__":
     test_connection()
-    #TODO make func for searching name of view
-    str_query = str(get_sql_query(_QUERY_PATH))
-    ## finish it & make func
-    pattern = rf"{re.escape(_CREATE_VIEW_TEXT)}[\s](\w+)"
-    match = re.search(pattern, str_query)
 
-    if match:
-        result = match.group(1)
-        print(f"The word after phrase: '{result}'")
-    else:
-        print("The phrase wasn't found! :(")
+    #TODO make func for searching name of view
+
+    view_name_list = []
+    str_query = str(get_sql_query(_QUERY_PATH))
+
+    while True:
+        try:
+            pattern = rf"{re.escape(_CREATE_VIEW_TEXT)}[\s](\w+)"
+            match = re.search(pattern, str_query)
+            view_name = match.group(1)
+
+            print(f"The word after phrase: '{view_name}'")
+            view_name_list.append(view_name)
+            drop_part = str_query.find(view_name)
+            str_query = str_query[drop_part::]
+            print(str_query[drop_part::])
+        except AttributeError:
+            break
+
+    print(view_name_list)
