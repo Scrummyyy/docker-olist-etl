@@ -1,11 +1,16 @@
 
+import os
 import psycopg2
 import pandas as pd
+from sqlalchemy import create_engine
 import re
 from config import Config  # import config file
 
 _QUERY_PATH ='../sql/metrics.sql'
 _CREATE_VIEW_TEXT = 'CREATE OR REPLACE VIEW'
+
+#TODO get date from docker file
+TARGET_DATE = os.getenv("TARGET_DATE", '2018-08-06')
 
 def get_connection():
     return psycopg2.connect(
@@ -16,14 +21,18 @@ def get_connection():
         password=Config.DB_PASS
     )
 
-def fetch_data_as_df(query: str, params: tuple = None) -> pd.DataFrame:
+def fetch_data_as_df(query: str, db_url: str,
+                     params: tuple = None) -> pd.DataFrame:
+
     """Run SQL query and return Pandas dataframe"""
+
     conn = get_connection()
+    engine = create_engine(db_url)
     try:
-        df = pd.read_sql_query(query, conn, params=params)
+        df = pd.read_sql_query(query, engine, params=params)
         return df
-    finally:
-        conn.close()
+    except:
+        print('Error while connecting to PostgreSQL')
 
 def test_connection():
     """Verifies that PostgreSQL is reachable and credentials are valid."""
@@ -52,13 +61,7 @@ def get_sql_query(filename, **kwargs):
 
     return sql_query
 
-# def get_data_from_db(customer_id):
-#     sql_file = 'sql_queries/get_data.sql'
-#     sql_query = get_sql_query(sql_file, customer_id=customer_id)
-
-
-
-def get_list_of_target_views(str_query):
+def get_list_of_target_views(str_query: str)-> list:
 
     ''' It parses SQL query and return list of target view names '''
 
@@ -81,7 +84,23 @@ def get_list_of_target_views(str_query):
 
     return view_name_list
 
+def get_view_sql_query(view_name: str, target_data: str) -> str:
+    #return f"SELECT * FROM {view_name} WHERE '{target_data}';"
+    return f"SELECT * FROM {view_name};"
+
 if __name__ == "__main__":
+
     test_connection()
     str_views_query = str(get_sql_query(_QUERY_PATH))
-    print(get_list_of_target_views(str_views_query))
+    list_of_target_views = get_list_of_target_views(str_views_query)
+
+    ## Load df from postgres view
+    ## TODO transfer this part to db_report_sender.py
+
+    list_of_view_queries_text = []
+
+    for view_name in list_of_target_views:
+        list_of_view_queries_text.append(get_view_sql_query(view_name, TARGET_DATE))
+
+    for query in list_of_view_queries_text:
+        print(fetch_data_as_df(query, db_url = Config.DB_URL))
