@@ -84,23 +84,32 @@ def get_list_of_target_views(str_query: str)-> list:
 
     return view_name_list
 
-def get_view_sql_query(view_name: str, target_data: str) -> str:
-    #return f"SELECT * FROM {view_name} WHERE '{target_data}';"
+def get_view_sql_query(view_name: str) -> str:
+
+    '''It returns a SQL query string from target view name'''
+
     return f"SELECT * FROM {view_name};"
+
+def get_list_of_query_text(list_of_target_views: list)-> list:
+
+    '''It returns a SQL query list for getting df'''
+
+    list_of_view_queries_text = []
+
+    for view_name in list_of_target_views:
+        list_of_view_queries_text.append(get_view_sql_query(view_name))
+
+    return list_of_view_queries_text
 
 if __name__ == "__main__":
 
     test_connection()
     str_views_query = str(get_sql_query(_QUERY_PATH))
     list_of_target_views = get_list_of_target_views(str_views_query)
+    list_of_view_queries_text = get_list_of_query_text(list_of_target_views)
 
     ## Load df from postgres view
     ## TODO transfer this part to db_report_sender.py
-
-    list_of_view_queries_text = []
-
-    for view_name in list_of_target_views:
-        list_of_view_queries_text.append(get_view_sql_query(view_name, TARGET_DATE))
 
     for query in list_of_view_queries_text:
         print(fetch_data_as_df(query, db_url = Config.DB_URL))
