@@ -104,12 +104,3 @@ def get_list_of_query_text(list_of_target_views: list)-> list:
 if __name__ == "__main__":
 
     test_connection()
-    str_views_query = str(get_sql_query(_QUERY_PATH))
-    list_of_target_views = get_list_of_target_views(str_views_query)
-    list_of_view_queries_text = get_list_of_query_text(list_of_target_views)
-
-    ## Load df from postgres view
-    ## TODO transfer this part to db_report_sender.py
-
-    for query in list_of_view_queries_text:
-        print(fetch_data_as_df(query, db_url = Config.DB_URL))
