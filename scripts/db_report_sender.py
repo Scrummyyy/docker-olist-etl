@@ -36,7 +36,16 @@ HTML_TEMPLATE = """
         th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #ecf0f1; font-size: 14px; }
         th { background-color: #f8f9fa; color: #333; font-weight: bold; }
         tr:hover { background-color: #f1f2f6; }
-        .footer { font-size: 12px; color: #95a5a6; margin-top: 20px; border-top: 1px solid #ecf0f1; padding-top: 10px; }
+        .footer {
+        clear: both;          /* Сбрасывает обтекание, если рядом есть плавающие элементы */
+        width: 100%;          /* Растягивает блок на всю ширину */
+        text-align: center;   /* Выравнивает текст по центру (можно поменять на left) */
+        margin-top: 40px;     /* Отступ сверху от таблиц */
+        padding-top: 15px;
+        border-top: 1px solid #e1e4e8; /* Тонкая разделительная линия */
+        color: #6a737d;
+        font-size: 12px;
+    }
     </style>
 </head>
 <body>
@@ -57,41 +66,103 @@ HTML_TEMPLATE = """
                     </tr>
                 </thead>
                 <tbody>
-                    {% for row in data %}
+                    {% for row in overdue_orders_summary %}
                     <tr>
                         <td>{{ row.report_period }}</td>
                         <td>{{ row.overdue_category }}</td>
                         <td>{{ row.order_count }}</td>
                         <td>{{ row.total_value }}</td>
-                        <td><strong>{{ row.avg_days }}</strong></td>
+                        <td>{{ row.avg_days }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
         <div class="card">
-            <h2>📊 Olist Logistics & Delivery Delay Digest</h2>
-            <p>Automated analysis of overdue delivery categories, affected order volume, and average 
-            delay duration extracted from the PostgreSQL database:</p>
+            <h2>📊 Olist Monthly Financial & Revenue Digest</h2>
+            <p>Automated summary of monthly order volume, item revenue, freight costs, gross revenue, 
+            and Average Order Value (AOV) extracted directly from PostgreSQL:</p>
             
             <table>
                 <thead>
                     <tr>
-                        <th>Period of report</th>
-                        <th>Overdue category</th>
-                        <th>Order amount</th>
-                        <th>Total value</th>
-                        <th>Avg days</th>
+                        <th>Report period</th>
+                        <th>Orders</th>
+                        <th>Items revenue</th>
+                        <th>Freight value</th>
+                        <th>Cross revenue</th>
+                        <th>Aov</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for row in data %}
+                    {% for row in month_revenue_aov %}
                     <tr>
                         <td>{{ row.report_period }}</td>
-                        <td>{{ row.overdue_category }}</td>
+                        <td>{{ row.orders }}</td>
+                        <td>{{ row.items_revenue }}</td>
+                        <td>{{ row.freight_value }}</td>
+                        <td>{{ row.cross_revenue }}</td>
+                        <td>{{ row.aov }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="card">
+            <h2>📊 Olist Payment Methods & Transaction Share Digest</h2>
+            <p>Automated analysis of payment channel distribution, transaction counts, 
+            volume shares, and total monetary value extracted directly from PostgreSQL:</p>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Report period</th>
+                        <th>Payment type</th>
+                        <th>Total transaction</th>
+                        <th>Volume avg</th>
+                        <th>Share of volume</th>
+                        <th>Total volume</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in payment_method %}
+                    <tr>
+                        <td>{{ row.report_period }}</td>
+                        <td>{{ row.payment_type }}</td>
+                        <td>{{ row.total_transaction }}</td>
+                        <td>{{ row.volume_avg }}</td>
+                        <td>{{ row.share_of_volume_pct }}</td>
+                        <td>{{ row.total_volume }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="card">
+            <h2>📊 Olist Operational & Logistics Performance Digest</h2>
+            <p>Automated breakdown of fulfillment delays, payment channel distribution, revenue metrics,
+             and freight costs extracted directly from PostgreSQL:</p>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Customer state</th>
+                        <th>Order count</th>
+                        <th>Avg item price</th>
+                        <th>Avg freight value</th>
+                        <th>Freight share</th>
+                        <th>Case</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in freight_ratio %}
+                    <tr>
+                        <td>{{ row.customer_state }}</td>
                         <td>{{ row.order_count }}</td>
-                        <td>{{ row.total_value }}</td>
-                        <td><strong>{{ row.avg_days }}</strong></td>
+                        <td>{{ row.avg_item_price }}</td>
+                        <td>{{ row.avg_freight_value }}</td>
+                        <td>{{ row.freight_share }}</td>
+                        <td>{{ row.case }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
