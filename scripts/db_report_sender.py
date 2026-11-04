@@ -16,12 +16,6 @@ str_views_query = str(get_sql_query(_QUERY_PATH))
 list_of_target_views = get_list_of_target_views(str_views_query)
 list_of_view_queries_text = get_list_of_query_text(list_of_target_views)
 
-## Testing result
-
-# for query in list_of_view_queries_text:
-#     print(fetch_data_as_df(query, db_url=Config.DB_URL))
-
-
 # HTML-example of letter
 
 HTML_TEMPLATE = """
@@ -37,12 +31,12 @@ HTML_TEMPLATE = """
         th { background-color: #f8f9fa; color: #333; font-weight: bold; }
         tr:hover { background-color: #f1f2f6; }
         .footer {
-        clear: both;          /* Сбрасывает обтекание, если рядом есть плавающие элементы */
-        width: 100%;          /* Растягивает блок на всю ширину */
-        text-align: center;   /* Выравнивает текст по центру (можно поменять на left) */
-        margin-top: 40px;     /* Отступ сверху от таблиц */
+        clear: both;          
+        width: 100%;          
+        text-align: center;   
+        margin-top: 40px;     
         padding-top: 15px;
-        border-top: 1px solid #e1e4e8; /* Тонкая разделительная линия */
+        border-top: 1px solid #e1e4e8;
         color: #6a737d;
         font-size: 12px;
     }
@@ -203,7 +197,17 @@ if __name__ == "__main__":
         # --- LOCAL PREVIEW STEP ---
         preview_file = Path("preview_report.html")
         preview_file.write_text(rendered_html, encoding="utf-8")
-
-
     except Exception as e:
         print(f"❌ Error executing the pipeline: {e}")
+
+    ## Sending reports
+    msg = EmailMessage()
+    msg["From"] = Config.SMTP_CONFIG['sender_email']
+    msg["To"] = Config.SMTP_CONFIG['receiver_email']
+    msg["Subject"] = "Olist Monthly Financial report"
+    msg.set_content("")
+    msg.add_alternative("<p></p>", subtype="html")
+
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+        server.login(Config.SMTP_CONFIG['sender_email'], Config.SMTP_CONFIG['app_password'])
+        server.send_message(msg)
