@@ -1,14 +1,10 @@
 from email.message import EmailMessage
 from db import _QUERY_PATH, get_sql_query, get_list_of_target_views, get_list_of_query_text, fetch_data_as_df
-from config import Config
 from pathlib import Path
 import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-import psycopg2
 from config import Config
 from jinja2 import Template
-import webbrowser
+
 
 ## Getting df for email reports
 
@@ -16,8 +12,7 @@ str_views_query = str(get_sql_query(_QUERY_PATH))
 list_of_target_views = get_list_of_target_views(str_views_query)
 list_of_view_queries_text = get_list_of_query_text(list_of_target_views)
 
-# HTML-example of letter
-
+## HTML-example of letter
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html>
@@ -175,8 +170,8 @@ HTML_TEMPLATE = """
 
 if __name__ == "__main__":
     try:
-    ## Loading df for gmail report
 
+    ## Loading df for gmail report
         queries = {
             'overdue_orders_summary': list_of_view_queries_text[0],
             'month_revenue_aov': list_of_view_queries_text[1],
@@ -192,8 +187,8 @@ if __name__ == "__main__":
 
         # Render HTML template with data
         template = Template(HTML_TEMPLATE)
-
         rendered_html = template.render(reports_data)
+
         # --- LOCAL PREVIEW STEP ---
         preview_file = Path("preview_report.html")
         preview_file.write_text(rendered_html, encoding="utf-8")
@@ -205,8 +200,12 @@ if __name__ == "__main__":
     msg["From"] = Config.SMTP_CONFIG['sender_email']
     msg["To"] = Config.SMTP_CONFIG['receiver_email']
     msg["Subject"] = "Olist Monthly Financial report"
-    msg.set_content("")
-    msg.add_alternative("<p></p>", subtype="html")
+
+    ## Alternative message
+    msg.set_content("Your email client does not support HTML. Please view this report in an HTML-enabled client.")
+
+    ## Main content
+    msg.add_alternative(rendered_html, subtype="html")
 
     with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
         server.login(Config.SMTP_CONFIG['sender_email'], Config.SMTP_CONFIG['app_password'])

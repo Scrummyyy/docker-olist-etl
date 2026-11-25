@@ -73,8 +73,6 @@ def get_list_of_target_views(str_query: str)-> list:
             pattern = rf"{re.escape(_CREATE_VIEW_TEXT)}[\s](\w+)"
             match = re.search(pattern, str_query)
             view_name = match.group(1)
-
-            print(f"The target view name: '{view_name}'")
             view_name_list.append(view_name)
             drop_part = str_query.find(view_name)
             str_query = str_query[drop_part::]
